@@ -2,7 +2,7 @@
 
 namespace Shared.Utils
 {
-    internal class Base64Helper
+    public static class Base64Helper
     {
     }
 }
