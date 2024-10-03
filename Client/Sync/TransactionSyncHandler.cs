@@ -20,7 +20,7 @@ namespace Client.Sync
 
         public void Start()
         {
-            _syncTimer = new Timer(SyncTransaction, null, TimeSpan.Zero,TimeSpan.FromMinutes(2));
+            _syncTimer = new Timer(SyncTransaction, null, TimeSpan.Zero,TimeSpan.FromMinutes(1));
         }
 
         private void SyncTransaction(object? state)
