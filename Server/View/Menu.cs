@@ -40,7 +40,7 @@ namespace Server.View
                         break;
 
                     case 3:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             UserServices.displayusertable();
                         }
@@ -52,7 +52,7 @@ namespace Server.View
                         break;
 
                     case 4:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             MachineServices.addMachine();
                         }
@@ -64,7 +64,7 @@ namespace Server.View
                         break;
 
                     case 5:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             MachineServices.deleteMachine();
                         }
@@ -76,7 +76,7 @@ namespace Server.View
                         break;
 
                     case 6:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             TransactionServices.addTransaction();
                         }
@@ -88,7 +88,7 @@ namespace Server.View
                         break;
 
                     case 7:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             TransactionServices.deleteTransaction();
                         }
@@ -99,7 +99,7 @@ namespace Server.View
                         break;
 
                     case 8:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             Console.WriteLine("Inserting into User Table...Enter 0 to return to the main menu or provide a User Name: ");
                             UserServices.addUser();
@@ -111,7 +111,7 @@ namespace Server.View
                         break;
 
                     case 9:
-                        if (DataBaseAccess.IsUserAdmin(userId))
+                        if (UserAccess.IsUserAdmin(userId))
                         {
                             UserServices.deleteuser();
                         }

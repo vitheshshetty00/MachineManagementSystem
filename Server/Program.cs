@@ -1,11 +1,14 @@
 ﻿using Server.DbAccess;
 using Server.View;
+using Server.Network;
 using Shared.Models;
 
 Console.WriteLine("Server Initialization");
 
 DbCreation.InitializeDB();
 Console.WriteLine("DB Initialized");
+
+Task.Run(() => new ServerNetworkManager().Start());
 
 while (true)
 {

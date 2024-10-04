@@ -41,7 +41,7 @@ namespace Server.View
                 Console.WriteLine("Enter Image Path");
                 imageData = Console.ReadLine();
             }
-            string imgData = ConvertImageToBase64String(imageData);
+            byte[] imgData = ConvertImageToBase64String(imageData);
 
             MachineAccess.InsertMachineData(machineName, IpAddress, port, imgData);
             //Image.saveImages();

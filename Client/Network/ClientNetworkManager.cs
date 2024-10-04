@@ -1,41 +1,115 @@
 ﻿using Client.DbAccess;
+using Client.Sync;
 using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using static Shared.Utils.Utils;
+using Shared.Utils;
+using System.Text.Json;
 
 namespace Client.Network
 {
-    internal class ClientNetworkManager
+    public class ClientNetworkManager
     {
-        private static TcpClient client;
-        private static NetworkStream stream;
+        private TcpClient client;
+        private NetworkStream networkStream;
+        private StreamReader reader;
+        private StreamWriter writer;
+
+        private TransactionSyncHandler transactionSyncHandler;
 
 
-        public static void Start()
+        public void Start()
         {
-            DBServices.CreateDataBases();
-            ConnectToServer();
+
+            try
+            {
+                ConnectToServer();
+                networkStream = client.GetStream();
+                reader = new StreamReader(networkStream);
+                writer = new StreamWriter(networkStream);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error starting the connecting server: {ex.Message}");
+            }
+            ReceiveInitialData();
+
+
             Thread receiveThread = new Thread(MonitorConnection);
             receiveThread.Start();
         }
+        private void ReceiveInitialData()
+        {
+            try
+            {
+                Console.WriteLine("Receiving initial data...");
 
-        private static void ConnectToServer()
+                // Read machine data
+                string machineBase64Json = reader.ReadLine();
+                ProcessReceivedData(machineBase64Json);
+
+                // Read user data
+                string userBase64Json = reader.ReadLine();
+                ProcessReceivedData(userBase64Json);
+
+
+                Console.WriteLine("Initial data received and synchronized.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error receiving initial data: {ex.Message}");
+            }
+        }
+
+        private void ProcessReceivedData(string base64Json)
+        {
+            try
+            {
+                byte[] jsonBytes = Convert.FromBase64String(base64Json);
+                string jsonString = Encoding.UTF8.GetString(jsonBytes);
+                var jsonData = JsonSerializer.Deserialize<ReceivedData>(jsonString);
+
+                if (jsonData != null && jsonData.OperationType.Equals("InitialDataTransfer"))
+                {
+                    // Decode the Base64-encoded data table
+
+                    DataSet dataSet = new DataSet();
+                    
+
+                    dataSet = Base64Helper.DecodeDataSet(jsonData.EncodedData);
+                    dataSet.Tables[0].TableName = jsonData.TableName;
+                    // Sync to local database
+                    SyncToLocalDatabase(jsonData.TableName, dataSet);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while processing  the recieved data{ex.Message}");
+
+            }
+
+        }
+
+        private void SyncToLocalDatabase(string tableName, DataSet dataSet)
+        {
+
+            Console.WriteLine($"Syncing table {tableName} to local database...");
+            //Utils.printDataTable(dataSet.Tables[0]);
+        }
+
+        private void ConnectToServer()
         {
             while (true)
             {
                 try
                 {
                     Console.WriteLine("Attempting to connect to server...");
-                    client = new TcpClient("172.36.0.30", 3400);
-                    stream = client.GetStream();
+
+                    client = new TcpClient("172.36.0.32", 3400);
                     Console.WriteLine("Connected to server.");
-                    break;
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -44,65 +118,32 @@ namespace Client.Network
                     Thread.Sleep(5000);
                 }
             }
+            
         }
 
-        private static void MonitorConnection()
+        private void MonitorConnection()
         {
             while (true)
             {
-                try
-                {
-                    ReceiveMessages();
-                }
-                catch (IOException)
+                if (!client.Connected)
                 {
                     Console.WriteLine("Server disconnected. Attempting to reconnect...");
                     ConnectToServer();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                    break;
-                }
-            }
-        }
+                Thread.Sleep(2000);
 
-        private static void ReceiveMessages()
+            }
+            
+        }
+        private class ReceivedData
         {
-            byte[] buffer = new byte[1024];
-            MemoryStream accumulatedStream = new();
-            DataSet ds2 = new DataSet();
-
-            while (true)
-            {
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                if (bytesRead == 0) break;
-
-                accumulatedStream.Write(buffer, 0, bytesRead);
-                string accumulatedMessage = Encoding.ASCII.GetString(accumulatedStream.ToArray());
-                Console.WriteLine(accumulatedMessage);
-                if (accumulatedMessage.Contains("\n"))
-                {
-                    string base64Message = accumulatedMessage.Trim();
-                    byte[] decoded = Convert.FromBase64String(base64Message);
-                    accumulatedStream.SetLength(0);
-                    using (MemoryStream ms2 = new MemoryStream(decoded))
-                    {
-                        ds2.ReadXml(ms2);
-                        printDataSet(ds2);
-                    }
-                    SqlDataAdapter da = new SqlDataAdapter("Select * from Student", DbConnectionManager.GetConnection());//
-                    //We make this for all the master tables
-                    SqlCommandBuilder cmdbuilder = new SqlCommandBuilder(da);
-                    //We make this for all the master tables
-
-                    if (ds2.HasChanges())
-                    {
-                        da.Update(ds2, "Student");
-                    }
-                    ds2.Clear();
-                }
-            }
+            public string OperationType { get; set; }
+            public string TableName { get; set; }
+            public string EncodedData { get; set; }
         }
+
     }
 }
+
+
+

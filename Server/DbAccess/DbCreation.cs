@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Shared.Models;
 
 namespace Server.DbAccess
 {
@@ -62,6 +63,11 @@ namespace Server.DbAccess
             {
                 Console.WriteLine(ex.Message);
             }
+            //List<Machine> machines = Machine.DataforInitization();
+            //foreach (Machine machine in machines)
+            //{
+            //    MachineAccess.InsertMachineData(machine.MachineName, machine.IPAddress, machine.PortNumber, machine.Image);
+            //}
         }
     }
 }

@@ -9,9 +9,9 @@ namespace Server.DbAccess
 {
     public class MachineAccess
     {
-        public static void InsertMachineData(string machineName, string ip, string port, string base64Image)
+        public static void InsertMachineData(string machineName, string ip, string port, byte[] imageData)
         {
-            byte[] imageData = Convert.FromBase64String(base64Image);
+             
             string query = @"INSERT INTO MachineTableMaster (MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
                          VALUES (@MachineName, @IP, @Port, @Image);";
 

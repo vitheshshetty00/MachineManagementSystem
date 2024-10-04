@@ -82,12 +82,12 @@ namespace Server.DbAccess
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Error1: {ex.Message}");
                 return null;
             }
             finally
             {
-                conn.Close();
+                //conn.Close();
             }
         }            
     }
