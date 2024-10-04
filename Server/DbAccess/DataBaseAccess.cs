@@ -1,33 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Configuration;
-using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
+using static Server.DbAccess.DbConnectionManager;
 
 namespace Server.DbAccess
 {
     public class DataBaseAccess
     {
-        private static string cs = ConfigurationManager.ConnectionStrings["dbcs"].ConnectionString;
-        private static SqlConnection conn = new SqlConnection(cs);
-
-        public static SqlConnection GetConnection()
+        
+        public static int ExecuteNonQuery(string query, SqlParameter[]? parameters)
         {
-            return new SqlConnection(cs);
-        }
-        public static int ExecuteNonQuery(string query, SqlParameter[] parameters)
-        {
-            using (SqlConnection conn = GetConnection())
+            SqlConnection conn = GetConnection();
+            try
             {
                 SqlCommand cmd = new SqlCommand(query, conn);
                 if (parameters != null)
                 {
                     cmd.Parameters.AddRange(parameters);
                 }
-                conn.Open();
                 return cmd.ExecuteNonQuery();
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return -1;
+            }
+            finally
+            {
+                conn.Close();
             }
         }
         public static object ExecuteScalar(string query, SqlParameter[] parameters)

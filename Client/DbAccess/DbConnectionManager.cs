@@ -69,5 +69,33 @@ namespace Client.DbAccess
 
                 return connection;
             }
+
+        public static int ExecuteNonQuery(string query, SqlParameter[]? parameters)
+        {
+            SqlConnection conn = GetConnection();
+            try
+            {
+                SqlCommand cmd = new SqlCommand(query, conn);
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+                return cmd.ExecuteNonQuery();
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return -1;
+            }
+            finally
+            {
+                conn.Close();
+            }
         }
+    }
 }

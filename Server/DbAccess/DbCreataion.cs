@@ -1,21 +1,15 @@
-﻿using Server.DbAccess;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Data.SqlClient;
 
 namespace Server.DbAccess
 {
-    public class CreateTable
+    public class DbCreataion
     {
-        public static void createtable()
+        public static void InitializeDB()
         {
             string database = @"
-            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Machine_Management_System_B2')
+            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Machine_Management_System_Server')
             BEGIN
-                CREATE DATABASE Machine_Management_System_B2;
+                CREATE DATABASE Machine_Management_System_Server;
             END;
             ";
 

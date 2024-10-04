@@ -1,2 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+using Clinet.DbAccess;
+
+DbCreataion.InitializeDB();
+Console.WriteLine("DB Initialized");
+
