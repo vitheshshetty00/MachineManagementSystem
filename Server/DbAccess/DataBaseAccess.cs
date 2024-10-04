@@ -1,11 +1,17 @@
 ﻿using Microsoft.Data.SqlClient;
 using static Server.DbAccess.DbConnectionManager;
-
+using Serilog;
 namespace Server.DbAccess
 {
     public class DataBaseAccess
     {
-        
+        static DataBaseAccess()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+        }
         public static int ExecuteNonQuery(string query, SqlParameter[]? parameters)
         {
             SqlConnection conn = GetConnection();
@@ -20,12 +26,12 @@ namespace Server.DbAccess
             }
             catch (SqlException ex)
             {
-                Console.WriteLine($"SQL Error: {ex.Message}");
+                Log.Error($"SQL Error: {ex.Message}");
                 return -1;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Log.Error($"Error: {ex.Message}");
                 return -1;
             }
             finally
@@ -33,6 +39,7 @@ namespace Server.DbAccess
                 conn.Close();
             }
         }
+
         public static object ExecuteScalar(string query, SqlParameter[] parameters)
         {
             SqlConnection conn = GetConnection();
@@ -49,12 +56,12 @@ namespace Server.DbAccess
             }
             catch (SqlException ex)
             {
-                Console.WriteLine($"SQL Error: {ex.Message}");
+                Log.Error($"SQL Error: {ex.Message}");
                 return -1;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Log.Error($"Error: {ex.Message}");
                 return -1;
             }
             finally
@@ -77,12 +84,12 @@ namespace Server.DbAccess
                 }
             }
             catch (SqlException ex) {
-                Console.WriteLine($"SQL Error: {ex.Message}");
+                Log.Error($"SQL Error: {ex.Message}");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Log.Error($"Error: {ex.Message}");
                 return null;
             }
             finally

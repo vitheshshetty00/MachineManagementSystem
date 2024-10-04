@@ -1,4 +1,6 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Server.DbAccess;
+using System;
+using System.Data.SqlClient;
 
 namespace Server.DbAccess
 {
@@ -6,64 +8,105 @@ namespace Server.DbAccess
     {
         public static void InitializeDB()
         {
-            string database = @"
-            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Machine_Management_System_Server')
-            BEGIN
-                CREATE DATABASE Machine_Management_System_Server;
-            END;
-            ";
-
             string machineTable = @"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='MachineTableMaster' AND xtype='U')
             CREATE TABLE MachineTableMaster (
-                MachineId INTEGER PRIMARY KEY IDENTITY(1,1),
+                MachineId NVARCHAR(50) PRIMARY KEY,
                 MachineName NVARCHAR(50) NOT NULL,
                 IP NVARCHAR(50) NOT NULL,
-                Port NVarchar(4) NOT NULL,
-                Image VARBINARY(Max) NOT NULL, 
-                Timestamp DATETIME NOT NULL DEFAULT GETDATE())
-               ;";
+                Port INTEGER NOT NULL,
+                Image VARBINARY(1000) NOT NULL, 
+                Creation_Time DATETIME NOT NULL DEFAULT GETDATE(),
+                LastUpdated DATETIME NOT NULL DEFAULT GETDATE()
+            );";
 
             string transactionTable = @"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TransactionTableMaster' AND xtype='U')
             CREATE TABLE TransactionTableMaster (
                 TransactionId INTEGER PRIMARY KEY IDENTITY(1,1),
-                M_Id INTEGER FOREIGN KEY REFERENCES MachineTableMaster(MachineId),
+                M_Id NVARCHAR(50) FOREIGN KEY REFERENCES MachineTableMaster(MachineId),
                 Event NVARCHAR(10) NOT NULL DEFAULT 'Ping',
                 Timestamp DATETIME NOT NULL DEFAULT GETDATE(),
-                Status NVARCHAR(10) NOT NULL);";
+                Status NVARCHAR(10) NOT NULL
+            );";
 
             string userTable = @"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserTableMaster' AND xtype='U')
             CREATE TABLE UserTableMaster (
-                UserId INTEGER PRIMARY KEY IDENTITY(1,1),
+                UserId NVARCHAR(50) PRIMARY KEY,
                 UserName NVARCHAR(50) NOT NULL,
-                Password varchar(20),
                 Email NVARCHAR(50) NOT NULL, 
-                IsAdmin BIT DEFAULT 0);";
-
-            SqlParameter[] parameters = { };
+                IsAdmin BIT DEFAULT 0
+            );";
 
             try
             {
-                DataBaseAccess.ExecuteNonQuery(database, parameters);
-                Console.WriteLine("Database created successfully");
-
-                DataBaseAccess.ExecuteNonQuery(machineTable, parameters);
+                // Execute each table creation query
+                DataBaseAccess.ExecuteNonQuery(machineTable, null);
                 Console.WriteLine("Machine Table created successfully");
 
-                DataBaseAccess.ExecuteNonQuery(transactionTable, parameters);
+                DataBaseAccess.ExecuteNonQuery(transactionTable, null);
                 Console.WriteLine("Transaction Table created successfully");
 
-                DataBaseAccess.ExecuteNonQuery(userTable, parameters);
+                DataBaseAccess.ExecuteNonQuery(userTable, null);
                 Console.WriteLine("User Table created successfully");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"Error creating tables: {ex.Message}");
             }
         }
+
+        public static string GenerateMachineId()
+        {
+         
+            int count = GetMachineCount();
+            return $"MC{(count + 1):D2}"; 
+        }
+
+        public static string GenerateUserId()
+        {
+            
+            int count = GetUserCount();
+            return $"U{(count + 1):D3}"; 
+        }
+
+        private static int GetMachineCount()
+        {
+            string query = "SELECT TOP 1 UserId FROM MachineTableMaster ORDER BY UserId DESC ";
+            object result = DataBaseAccess.ExecuteScalar(query, null);
+            return (int)(result ?? 0);
+
+            string number=result.ToString().Substring(2);
+
+            return Convert.ToInt32(number);
+
+           
+        }
+
+        private static int GetUserCount()
+        {
+            string query = "SELECT TOP 1 UserId FROM UserTableMaster ORDER BY UserId DESC";
+            
+            object result = DataBaseAccess.ExecuteScalar(query, null); 
+
+     
+            if (result == null)
+            {
+                return 0; 
+            }
+
+            string userId = result.ToString();
+
+     
+            if (userId.Length > 1 && userId.StartsWith("U"))
+            {
+                string numberPart = userId.Substring(1); 
+                return Convert.ToInt32(numberPart); 
+            }
+
+            return 0; 
+        }
+
     }
 }
-
-

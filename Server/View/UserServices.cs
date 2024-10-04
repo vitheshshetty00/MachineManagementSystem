@@ -21,7 +21,7 @@ namespace Server.View
             if (userName == "0") return;
             string? email = PromtAndValidateEmail("Enter Your Email");
             string password = Password.InputPassword();
-            int userId = 0;
+            string userId = "0";
             if (UserAccess.IsUserTableEmpty() || UserAccess.CountAdminUserMasterTable() == 0)
             {
                 userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, 1);

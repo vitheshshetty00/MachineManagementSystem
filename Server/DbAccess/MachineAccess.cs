@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,25 +13,64 @@ namespace Server.DbAccess
         public static void InsertMachineData(string machineName, string ip, string port, string base64Image)
         {
             byte[] imageData = Convert.FromBase64String(base64Image);
-            string query = @"INSERT INTO MachineTableMaster (MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
-                         VALUES (@MachineName, @IP, @Port, @Image);";
+            string machineId = DbCreation.GenerateMachineId();
+            string query = @"INSERT INTO MachineTableMaster (@MachineId,MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
+                     VALUES (@MachineId.@MachineName, @IP, @Port, @Image);";
 
-            SqlParameter[] parameters =
+                    SqlParameter[] parameters =
+                    {
+
+                        new SqlParameter("@MachineId", machineId),
+                        new SqlParameter("@MachineName", machineName),
+                        new SqlParameter("@IP", ip),
+                        new SqlParameter("@Port", port),
+                        new SqlParameter("@Image", imageData),
+                    };
+            try
             {
-            new SqlParameter("@MachineName", machineName),
-            new SqlParameter("@IP", ip),
-            new SqlParameter("@Port", port),
-            new SqlParameter("@Image", imageData),
-            };
-            int M_id = Convert.ToInt32(DataBaseAccess.ExecuteScalar(query, parameters));
-            Console.WriteLine($"Machine inserted with ID:{M_id}");
+                int M_id = Convert.ToInt32(DataBaseAccess.ExecuteScalar(query, parameters));
+                Log.Information("Machine inserted successfully with ID: {MachineId}", M_id);
+            }
+            catch (SqlException ex)
+            {
+                Log.Error(ex, "SQL Error occurred while inserting machine: {MachineName}, IP: {IP}, Port: {Port}", machineName, ip, port);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while inserting machine: {MachineName}, IP: {IP}, Port: {Port}", machineName, ip, port);
+            }
         }
+
         public static int deleteMachineData(int machineId)
         {
             string query = "DELETE FROM MachineTableMaster WHERE MachineId = @machineid";
             SqlParameter[] parameters = { new SqlParameter("@machineid", machineId) };
-            return DataBaseAccess.ExecuteNonQuery(query, parameters);
+
+            try
+            {
+                int deletedCount = DataBaseAccess.ExecuteNonQuery(query, parameters);
+
+                if (deletedCount > 0)
+                {
+                    // Log success message
+                    Log.Information("Machine deleted successfully. Machine ID: {MachineId}", machineId);
+                }
+                else
+                {
+                    // Log warning if no rows were affected
+                    Log.Warning("No machine found with ID: {MachineId}. No rows deleted.", machineId);
+                }
+
+                return deletedCount;
+            }
+            catch (Exception ex)
+            {
+                // Log error message
+                Log.Error(ex, "Error deleting machine with ID: {MachineId}", machineId);
+                return -1; // Return -1 or an error-specific value
+            }
         }
+
         public static void displayMachineData()
         {
             string query = "SELECT * from MachineTableMaster";
