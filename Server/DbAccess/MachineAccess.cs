@@ -1,10 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Server.DbAccess
 {
@@ -12,7 +7,6 @@ namespace Server.DbAccess
     {
         public static void InsertMachineData(string machineName, string ip, string port, byte[] imageData)
         {
-            byte[] imageData = Convert.FromBase64String(base64Image);
             string machineId = DbCreation.GenerateMachineId();
             string query = @"INSERT INTO MachineTableMaster (@MachineId,MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
                      VALUES (@MachineId.@MachineName, @IP, @Port, @Image);";

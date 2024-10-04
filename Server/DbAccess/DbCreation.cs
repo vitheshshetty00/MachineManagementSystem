@@ -1,6 +1,6 @@
 ﻿using Server.DbAccess;
 using System;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace Server.DbAccess
 {
