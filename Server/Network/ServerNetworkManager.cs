@@ -14,97 +14,157 @@ namespace Server.Network
 {
     internal class ServerNetworkManager
     {
-        private static List<TcpClient> clients = new List<TcpClient>();
-        private static TcpListener listener;
+        //private static List<TcpClient> clients = new List<TcpClient>();
+        private static TcpListener? Server;
+        private bool isRunning;
 
-        public static void Start()
+        public void Start()
         {
-            listener = new TcpListener(IPAddress.Any, 3400);
-            listener.Start();
-            Console.WriteLine("Server started. Waiting for clients...");
-
-            Thread consoleThread = new Thread(HandleConsoleInput);
-            consoleThread.Start();
-
-            while (true)
+            try
             {
-                TcpClient client = listener.AcceptTcpClient();
-                clients.Add(client);
-                Console.WriteLine("Client connected.");
+                Server = new TcpListener(IPAddress.Any, 3400);
+                Server.Start();
+                isRunning = true;
+                Console.WriteLine("Server started. Waiting for clients...");
 
-                Thread clientThread = new Thread(() => HandleClient(client));
-                clientThread.Start();
-            }
-        }
-
-        private static void HandleConsoleInput()
-        {
-            while (true)
-            {
-                string message = Console.ReadLine();
-                if (!string.IsNullOrEmpty(message))
+                while (isRunning)
                 {
-                    BroadcastMessage(message);
+                    try
+                    {
+                        TcpClient client = Server.AcceptTcpClient();
+                        Console.WriteLine("Client connected.");
+
+                        Thread clientThread = new Thread(() => HandleClient(client));
+                        clientThread.IsBackground = true;
+                        clientThread.Start();
+                    }
+                    catch (SocketException se)
+                    {
+                        Console.WriteLine($"Socket error: {se.Message}");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Error accepting client: {e.Message}");
+                    }
                 }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error Starting the Server:{e.Message}");
+            }
+           
         }
+        public void StopServer()
+        {
+            isRunning = false;
+            Server?.Stop();
+            Console.WriteLine("Server stopped.");
+        }
+
 
         private static void HandleClient(TcpClient client)
         {
-            NetworkStream stream = client.GetStream();
-            byte[] buffer = new byte[1024];
-
             try
             {
-                string message = SendData();
-                BroadcastMessage(message);
-                //Thread.Sleep(10000);
-                //BroadcastMessage(message);
-            }
-            catch (IOException)
-            {
-                Console.WriteLine("Client disconnected.");
-            }
-        }
-
-        private static void BroadcastMessage(string message)
-        {
-            byte[] buffer = Encoding.ASCII.GetBytes(message);
-            foreach (var client in clients)
-            {
                 NetworkStream stream = client.GetStream();
-                try
+                StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
+                StreamReader reader = new StreamReader(stream);
+                //When a client connects, send the database to the client(i,e the Machine table and Users table)
+                SendDatabaseTables(writer);
+
+
+
+                Task.Run(() => MonitorDatabaseChanges(client, writer));
+                while (client.Connected)
                 {
-                    stream.Write(buffer, 0, buffer.Length);
+                    try
+                    {
+
+                        string? messageFromClient = reader.ReadLine();
+                        if (!string.IsNullOrEmpty(messageFromClient))
+                        {
+                            Console.WriteLine($"Received from client: {messageFromClient}");
+                            // Handle the transactions recieved from the client
+                        }
+                    }
+                    catch (IOException ioEx)
+                    {
+                        Console.WriteLine($"Client connection error: {ioEx.Message}");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Client connection error: {ex.Message}");
+                        break;
+                    }
                 }
-                catch (IOException)
-                {
-                    Console.WriteLine("Failed to send message to a client.");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling client: {ex.Message}");
+            }
+
+        }
+
+        private static void SendDatabaseTables(StreamWriter writer)
+        {
+            try
+            {
+                string machineData = SendData("SELECT * FROM MachineTableMaster");
+                string usersData = SendData("SELECT * FROM UserTableMaster");
+
+                writer.WriteLine(machineData);
+                writer.WriteLine(usersData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending database tables: {ex.Message}");
             }
         }
 
-        public static string SendData()
+        private static void MonitorDatabaseChanges(TcpClient client, StreamWriter writer)
         {
-            DataSet ds = new DataSet();
-            SqlDataAdapter da = new SqlDataAdapter("Select * from Student", DbConnectionManager.GetConnection());
-            da.Fill(ds, "Student");
-            DataSet ds2 = new DataSet();
-            string base64ds;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                ds.WriteXml(ms);
-                byte[] buffer = ms.ToArray();
-                base64ds = Convert.ToBase64String(buffer);
+            throw new NotImplementedException();
+        }
 
-                byte[] decoded = Convert.FromBase64String(base64ds);
-                using (MemoryStream ms2 = new MemoryStream(decoded))
+        //private static void BroadcastMessage(string message)
+        //{
+        //    byte[] buffer = Encoding.ASCII.GetBytes(message);
+        //    foreach (var client in clients)
+        //    {
+        //        NetworkStream stream = client.GetStream();
+        //        try
+        //        {
+        //            stream.Write(buffer, 0, buffer.Length);
+        //        }
+        //        catch (IOException)
+        //        {
+        //            Console.WriteLine("Failed to send message to a client.");
+        //        }
+        //    }
+        //}
+
+        public static string SendData(string query)
+        {
+            try
+            {
+                DataSet ds = new DataSet();
+                SqlDataAdapter da = new SqlDataAdapter(query, DbConnectionManager.GetConnection());
+                da.Fill(ds);
+                string base64ds;
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    ds2.ReadXml(ms2);
-                    printDataSet(ds2);
+                    ds.WriteXml(ms);
+                    byte[] buffer = ms.ToArray();
+                    base64ds = Convert.ToBase64String(buffer);
                 }
+                return base64ds + "\n";
             }
-            return base64ds + "\n";
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending data: {ex.Message}");
+                return string.Empty;
+            }
         }
     }
 }
