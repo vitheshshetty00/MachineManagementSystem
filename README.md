@@ -20,7 +20,6 @@ This is a **Client-Server Architecture** based **Machine Management System** for
 - **SQL Server**: Backend database for both client and server.
 
 ## Database Structure
-### Server Database
 - **MachineTableMaster**
   - `MachineId` (Primary Key)
   - `MachineName`
