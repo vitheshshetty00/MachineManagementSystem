@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Server.DbAccess;
+using Shared.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,23 +8,24 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using static Shared.Utils.Utils;
 
 namespace Server.Network
 {
-    internal class ServerNetworkManager
+    public class ServerNetworkManager
     {
         //private static List<TcpClient> clients = new List<TcpClient>();
-        private static TcpListener? Server;
+        private static TcpListener? server;
         private bool isRunning;
 
         public void Start()
         {
             try
             {
-                Server = new TcpListener(IPAddress.Any, 3400);
-                Server.Start();
+                server = new TcpListener(IPAddress.Any, 3400);
+                server.Start();
                 isRunning = true;
                 Console.WriteLine("Server started. Waiting for clients...");
 
@@ -31,7 +33,7 @@ namespace Server.Network
                 {
                     try
                     {
-                        TcpClient client = Server.AcceptTcpClient();
+                        TcpClient client = server.AcceptTcpClient();
                         Console.WriteLine("Client connected.");
 
                         Thread clientThread = new Thread(() => HandleClient(client));
@@ -57,7 +59,7 @@ namespace Server.Network
         public void StopServer()
         {
             isRunning = false;
-            Server?.Stop();
+            server?.Stop();
             Console.WriteLine("Server stopped.");
         }
 
@@ -110,8 +112,9 @@ namespace Server.Network
         {
             try
             {
-                string machineData = SendData("SELECT * FROM MachineTableMaster");
-                string usersData = SendData("SELECT * FROM UserTableMaster");
+                string machineData = GetEncodedData("MachineTableMaster", "SELECT * FROM MachineTableMaster");
+                string usersData = GetEncodedData("UserTableMaster", "SELECT * FROM UserTableMaster");
+
 
                 writer.WriteLine(machineData);
                 writer.WriteLine(usersData);
@@ -122,47 +125,50 @@ namespace Server.Network
             }
         }
 
+        private static string GetEncodedData(string tableName, string query)
+        {
+            try
+            {
+               string base64Data = GetData(query);
+                var jsonData = new
+                {
+                    OperationType = "InitialDataTransfer",
+                    TableName = tableName,
+                    EncodedData = base64Data
+                };
+                string jsonString = JsonSerializer.Serialize(jsonData);
+                string base64Json = Base64Helper.Encode(jsonString);
+                return base64Json;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Encoding data: {ex.Message}");
+                return string.Empty;
+            }
+
+        }
+
         private static void MonitorDatabaseChanges(TcpClient client, StreamWriter writer)
         {
             throw new NotImplementedException();
         }
 
-        //private static void BroadcastMessage(string message)
-        //{
-        //    byte[] buffer = Encoding.ASCII.GetBytes(message);
-        //    foreach (var client in clients)
-        //    {
-        //        NetworkStream stream = client.GetStream();
-        //        try
-        //        {
-        //            stream.Write(buffer, 0, buffer.Length);
-        //        }
-        //        catch (IOException)
-        //        {
-        //            Console.WriteLine("Failed to send message to a client.");
-        //        }
-        //    }
-        //}
+     
 
-        public static string SendData(string query)
+        public static string GetData(string query)
         {
             try
             {
                 DataSet ds = new DataSet();
                 SqlDataAdapter da = new SqlDataAdapter(query, DbConnectionManager.GetConnection());
                 da.Fill(ds);
-                string base64ds;
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    ds.WriteXml(ms);
-                    byte[] buffer = ms.ToArray();
-                    base64ds = Convert.ToBase64String(buffer);
-                }
-                return base64ds + "\n";
+                string base64ds= Base64Helper.EncodeDataSet(ds);
+              
+                return base64ds ;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error sending data: {ex.Message}");
+                Console.WriteLine($"Error Geeting data: {ex.Message}");
                 return string.Empty;
             }
         }

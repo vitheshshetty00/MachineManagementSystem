@@ -131,35 +131,35 @@ namespace Shared.Utils
         }
 
 
-        public static string GetInput(string prompt, string errorMessage)
-        {
-            string input;
-            while (true)
-            {
-                Console.Write(prompt);
-                input = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(input)) return input;
-                Console.WriteLine(errorMessage);
-            }
-        }
+        //public static string GetInput(string prompt, string errorMessage)
+        //{
+        //    string input;
+        //    while (true)
+        //    {
+        //        Console.Write(prompt);
+        //        input = Console.ReadLine();
+        //        if (!string.IsNullOrWhiteSpace(input)) return input;
+        //        Console.WriteLine(errorMessage);
+        //    }
+        //}
 
-        public static string GetImage(string prompt)
-        {
-            Console.WriteLine("Enter Image Path");
-            string? imageData = Console.ReadLine();
-            while (string.IsNullOrEmpty(imageData) || !IsValidImagePath(imageData))
-            {
-                Console.WriteLine("Enter Image Path");
-                imageData = Console.ReadLine();
-            }
-            string imgData = ConvertImageToBase64String(imageData);
-            return imgData;
-        }
+        //public static string GetImage(string prompt)
+        //{
+        //    Console.WriteLine("Enter Image Path");
+        //    string? imageData = Console.ReadLine();
+        //    while (string.IsNullOrEmpty(imageData) || !IsValidImagePath(imageData))
+        //    {
+        //        Console.WriteLine("Enter Image Path");
+        //        imageData = Console.ReadLine();
+        //    }
+        //    string imgData = ConvertImageToBase64String(imageData);
+        //    return imgData;
+        //}
 
-        public static string ConvertImageToBase64String(string imagePath)
+        public static byte[] ConvertImageToBase64String(string imagePath)
         {
-            byte[] imageBytes = File.ReadAllBytes(imagePath);
-            return Convert.ToBase64String(imageBytes);
+            return File.ReadAllBytes(imagePath);
+          
         }
 
 
