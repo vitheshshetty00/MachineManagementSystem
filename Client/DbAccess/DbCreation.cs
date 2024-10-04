@@ -1,15 +1,16 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Client.DbAccess;
+using Microsoft.Data.SqlClient;
 
-namespace Server.DbAccess
+namespace Clinet.DbAccess
 {
-    public class DbCreataion
+    public class DbCreation
     {
         public static void InitializeDB()
         {
             string database = @"
-            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Machine_Management_System_Server')
+            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'Machine_Management_System_Clinet')
             BEGIN
-                CREATE DATABASE Machine_Management_System_Server;
+                CREATE DATABASE Machine_Management_System_Client;
             END;
             ";
 
@@ -46,16 +47,16 @@ namespace Server.DbAccess
 
             try
             {
-                DataBaseAccess.ExecuteNonQuery(database, parameters);
+                DbConnectionManager.ExecuteNonQuery(database, parameters);
                 Console.WriteLine("Database created successfully");
 
-                DataBaseAccess.ExecuteNonQuery(machineTable, parameters);
+                DbConnectionManager.ExecuteNonQuery(machineTable, parameters);
                 Console.WriteLine("Machine Table created successfully");
 
-                DataBaseAccess.ExecuteNonQuery(transactionTable, parameters);
+                DbConnectionManager.ExecuteNonQuery(transactionTable, parameters);
                 Console.WriteLine("Transaction Table created successfully");
 
-                DataBaseAccess.ExecuteNonQuery(userTable, parameters);
+                DbConnectionManager.ExecuteNonQuery(userTable, parameters);
                 Console.WriteLine("User Table created successfully");
             }
             catch (Exception ex)

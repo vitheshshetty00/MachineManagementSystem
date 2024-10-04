@@ -18,19 +18,17 @@ namespace Server.View
             if (machineIdInput == "0") return;
 
             int machineId;
-            while (string.IsNullOrEmpty(machineIdInput) || !int.TryParse(machineIdInput, out machineId) || !DataBaseAccess.IsMachineIdValid(machineId))
+            while (string.IsNullOrEmpty(machineIdInput) || !int.TryParse(machineIdInput, out machineId) || !MachineAccess.IsMachineIdValid(machineId))
             {
                 Console.WriteLine("Please provide a valid Machine ID that exists in the MachineTableMaster:");
                 machineIdInput = Console.ReadLine();
                 if (machineIdInput == "0") return;
             }
 
-            // Event Validation
             Console.WriteLine("Enter Event (or press Enter to use default 'Ping'):");
             string? eventInput = Console.ReadLine();
-            if (string.IsNullOrEmpty(eventInput)) eventInput = "Ping";  // Use default if empty
+            if (string.IsNullOrEmpty(eventInput)) eventInput = "Ping";  
 
-            // Status Validation
             Console.WriteLine("Enter Status:Success or Failure");
             string? statusInput = Console.ReadLine();
             while (statusInput != "Success" && statusInput != "Failure")
@@ -41,7 +39,7 @@ namespace Server.View
 
             try
             {
-                int TransactionID = DataBaseAccess.InsertTransactionData(machineId, eventInput, statusInput);
+                int TransactionID = TransactionAccess.InsertTransactionData(machineId, eventInput, statusInput);
                 Console.WriteLine("Transaction data successfully inserted with ID." + TransactionID);
             }
             catch (Exception ex)
@@ -50,7 +48,6 @@ namespace Server.View
             }
 
         }
-
         public static void deleteTransaction()
         {
             try
@@ -64,7 +61,7 @@ namespace Server.View
                     int.TryParse(Console.ReadLine(), out t_id);
 
                 }
-                int result = DataBaseAccess.deleteMachineData(t_id);
+                int result = MachineAccess.deleteMachineData(t_id);
                 if (result > 0)
                     Console.WriteLine($"Machine with Id:{t_id} deleted");
             }
@@ -73,7 +70,7 @@ namespace Server.View
         }
         public static void displayTransaction()
         {
-            DataBaseAccess.displayTransactionData();
+            TransactionAccess.displayTransactionData();
         }
     }
 }

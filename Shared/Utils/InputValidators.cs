@@ -11,7 +11,6 @@ namespace Shared.Utils
 
     public static class InputValidators
     {
-
         public static bool IsValidIPAddress(string ipAddress)
         {
             string[] octets = ipAddress.Split(new char[] { '.', ':' });

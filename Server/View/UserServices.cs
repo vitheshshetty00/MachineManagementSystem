@@ -21,18 +21,14 @@ namespace Server.View
             if (userName == "0") return;
             string? email = PromtAndValidateEmail("Enter Your Email");
             string password = Password.InputPassword();
-            //Console.WriteLine(password);
             int userId = 0;
-            ///////////////////////////////////////////////////////////////////////////////////
-            if (DataBaseAccess.IsUserTableEmpty() || DataBaseAccess.CountAdminUserMasterTable() == 0)
+            if (UserAccess.IsUserTableEmpty() || UserAccess.CountAdminUserMasterTable() == 0)
             {
-                userId = DataBaseAccess.InsertIntoUserMasterTable(userName, password, email, 1); // IsAdmin = true
+                userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, 1);
                 Console.WriteLine($"User '{userName}' added as admin with ID:{userId}");
             }
-            ///////////////////////////////////////////////////////////////////////
             else
             {
-                // If not empty, this user will be a regular user
                 Console.WriteLine("Is Admin? (1 for Yes, 0 for No): ");
 
                 int.TryParse(Console.ReadLine(), out int isAdmin);
@@ -42,7 +38,7 @@ namespace Server.View
                     Console.WriteLine("Enter valid option.");
                     int.TryParse(Console.ReadLine(), out isAdmin);
                 }
-                userId = DataBaseAccess.InsertIntoUserMasterTable(userName, password, email, isAdmin); // IsAdmin = false
+                userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, isAdmin);
                 Console.WriteLine($"User '{userName}' with ID:{userId} registered successfully.");
             }
         }
@@ -54,7 +50,7 @@ namespace Server.View
                 Console.WriteLine("Enter User Id :");
                 int.TryParse(Console.ReadLine(), out int id);
 
-                if (DataBaseAccess.DeleteUserMasterTable(id) > 0)
+                if (UserAccess.DeleteUserMasterTable(id) > 0)
                 {
                     Console.WriteLine("Deletion was successful");
                 }
@@ -67,7 +63,7 @@ namespace Server.View
 
         public static void displayusertable()
         {
-            DataBaseAccess.displayUserMasterTable();
+            UserAccess.displayUserMasterTable();
         }
     }
 
@@ -88,7 +84,7 @@ namespace Server.View
                 else if (key.Key == ConsoleKey.Backspace && password.Length > 0)
                 {
                     password.Remove(password.Length - 1, 1);
-                    Console.Write("\b \b"); // Remove '*' on backspace
+                    Console.Write("\b \b"); 
                 }
                 else if (key.Key != ConsoleKey.Backspace)
                 {
@@ -101,10 +97,9 @@ namespace Server.View
 
         public static bool IsValidPassword(string password)
         {
-            // At least 8 characters, 1 uppercase, 1 lowercase
             return password.Length >= 8 &&
-                   Regex.IsMatch(password, "[A-Z]") &&   // At least one uppercase letter
-                   Regex.IsMatch(password, "[a-z]");     // At least one lowercase letter
+                   Regex.IsMatch(password, "[A-Z]") &&   
+                   Regex.IsMatch(password, "[a-z]");     
         }
 
         public static string InputPassword()
@@ -125,7 +120,6 @@ namespace Server.View
                 }
                 string repassword = GetPassword("Re-enter the password: ");
 
-                // Check if the passwords match
                 if (password == repassword)
                 {
                     Console.WriteLine("\nCorrect password. Proceed.");
@@ -138,7 +132,5 @@ namespace Server.View
                 }
             }
         }
-
     }
 }
-

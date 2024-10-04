@@ -22,7 +22,7 @@ namespace Server.View
             }
             Console.WriteLine("Enter IP Address");
             string? IpAddress = Console.ReadLine();
-            while (string.IsNullOrEmpty(IpAddress) || !IsValidIPAddress(IpAddress))
+            while (string.IsNullOrEmpty(IpAddress) || ! IsValidIPAddress(IpAddress))
             {
                 Console.WriteLine("Enter valid IP Address");
                 IpAddress = Console.ReadLine();
@@ -43,7 +43,7 @@ namespace Server.View
             }
             string imgData = ConvertImageToBase64String(imageData);
 
-            DataBaseAccess.InsertMachineData(machineName, IpAddress, port, imgData);
+            MachineAccess.InsertMachineData(machineName, IpAddress, port, imgData);
             //Image.saveImages();
         }
 
@@ -60,7 +60,7 @@ namespace Server.View
                     int.TryParse(Console.ReadLine(), out machineId);
 
                 }
-                int result = DataBaseAccess.deleteMachineData(machineId);
+                int result = MachineAccess.deleteMachineData(machineId);
                 if (result > 0)
                     Console.WriteLine($"Machine with Id:{machineId} deleted");
             }
@@ -70,7 +70,7 @@ namespace Server.View
 
         public static void displayMachine()
         {
-            DataBaseAccess.displayMachineData();
+            MachineAccess.displayMachineData();
         }
     }
 }
