@@ -7,8 +7,67 @@ using System.Threading.Tasks;
 
 namespace Shared.Utils
 {
+
+
     public static class InputValidators
     {
+
+        public static bool IsValidIPAddress(string ipAddress)
+        {
+            string[] octets = ipAddress.Split(new char[] { '.', ':' });
+            if (octets.Length != 4)
+            {
+                return false;
+            }
+            foreach (string octet in octets)
+            {
+                if (!IsNumeric(octet))
+                {
+                    return false;
+                }
+                int num = int.Parse(octet);
+                if (num < 0 || num > 255)
+                {
+                    return false;
+                }
+                if (octet.Length > 1 && octet.StartsWith("0"))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static bool IsNumeric(string value)
+        {
+            foreach (char c in value)
+            {
+                if (!char.IsDigit(c))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static readonly string[] validImageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+
+        public static bool IsValidImagePath(string path)
+        {
+            if (!File.Exists(path))
+            {
+                Console.WriteLine("File does not exist.");
+                return false;
+            }
+
+            string fileExtension = Path.GetExtension(path).ToLower();
+            if (Array.Exists(validImageExtensions, ext => ext == fileExtension))
+            {
+                return true;
+            }
+
+            Console.WriteLine("Unsupported image file format.");
+            return false;
+        }
         public static string PromptForValidString(string message, int maxLength = 256)
         {
             string? input;
@@ -104,23 +163,6 @@ namespace Shared.Utils
             return Convert.ToBase64String(imageBytes);
         }
 
-        public static bool IsValidImagePath(string imagePath)
-        {
-            // Check if the file exists
-            if (!File.Exists(imagePath))
-            {
-                return false;
-            }
-
-            // Get the file extension
-            string extension = Path.GetExtension(imagePath)?.ToLower();
-
-            // Define a list of valid image extensions
-            string[] validExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
-
-            // Check if the file extension is valid
-            return validExtensions.Contains(extension);
-        }
 
 
         public static string GetValidIpAddress()
@@ -178,8 +220,6 @@ namespace Shared.Utils
 
                 if (part.Length > 1 && part.StartsWith("0")) return false;
             }
-
-
             return true;
         }
 
