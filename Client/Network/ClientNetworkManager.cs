@@ -29,13 +29,15 @@ namespace Client.Network
                 reader = new StreamReader(networkStream);
                 writer = new StreamWriter(networkStream);
 
+                transactionSyncHandler = new TransactionSyncHandler(networkStream);
+                transactionSyncHandler.Start();
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error starting the connecting server: {ex.Message}");
             }
             ReceiveInitialData();
-
 
             Thread receiveThread = new Thread(MonitorConnection);
             receiveThread.Start();
@@ -46,11 +48,11 @@ namespace Client.Network
             {
                 Console.WriteLine("Receiving initial data...");
 
-                // Read machine data
+                
                 string machineBase64Json = reader.ReadLine();
                 ProcessReceivedData(machineBase64Json);
 
-                // Read user data
+           
                 string userBase64Json = reader.ReadLine();
                 ProcessReceivedData(userBase64Json);
 
@@ -73,14 +75,12 @@ namespace Client.Network
 
                 if (jsonData != null && jsonData.OperationType.Equals("InitialDataTransfer"))
                 {
-                    // Decode the Base64-encoded data table
 
                     DataSet dataSet = new DataSet();
                     
 
                     dataSet = Base64Helper.DecodeDataSet(jsonData.EncodedData);
                     dataSet.Tables[0].TableName = jsonData.TableName;
-                    // Sync to local database
                     SyncToLocalDatabase(jsonData.TableName, dataSet);
                 }
             }
@@ -94,10 +94,59 @@ namespace Client.Network
 
         private void SyncToLocalDatabase(string tableName, DataSet dataSet)
         {
-
             Console.WriteLine($"Syncing table {tableName} to local database...");
-            //Utils.printDataTable(dataSet.Tables[0]);
+            SqlConnection connection = DbConnectionManager.GetConnection();
+            try
+            {
+                string deleteQuery = $"DELETE FROM {tableName}";
+                using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                if (tableName == "MachineTableMaster" && dataSet.Tables[0].Columns.Contains("Image"))
+                {
+                    DataColumn newColumn = new DataColumn("Image_temp", typeof(byte[]));
+                    dataSet.Tables[0].Columns.Add(newColumn);
+
+                    
+                    foreach (DataRow row in dataSet.Tables[0].Rows)
+                    {
+                        if (row["Image"] is string imageString)
+                        {
+                            row["Image_temp"] = Convert.FromBase64String(imageString);
+                        }
+                    }
+
+                    dataSet.Tables[0].Columns.Remove("Image");
+
+                    newColumn.ColumnName = "Image";
+                }
+
+                using (SqlDataAdapter adapter = new SqlDataAdapter())
+                {
+                    adapter.SelectCommand = new SqlCommand($"SELECT * FROM {tableName} WHERE 1 = 0", connection);
+                    SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+                    adapter.InsertCommand = builder.GetInsertCommand();
+
+                    adapter.Update(dataSet.Tables[0]);
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error While Sync to local Database: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error While Syncto local Database: {ex.Message}");
+            }
+            finally
+            {
+                connection.Close();
+            }
         }
+
+
 
         private void ConnectToServer()
         {

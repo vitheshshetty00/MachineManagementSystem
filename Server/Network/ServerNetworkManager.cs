@@ -76,7 +76,7 @@ namespace Server.Network
 
 
 
-                Task.Run(() => MonitorDatabaseChanges(client, writer));
+                //Task.Run(() => MonitorDatabaseChanges(client, writer));
                 while (client.Connected)
                 {
                     try
@@ -162,6 +162,10 @@ namespace Server.Network
                 DataSet ds = new DataSet();
                 SqlDataAdapter da = new SqlDataAdapter(query, DbConnectionManager.GetConnection());
                 da.Fill(ds);
+                foreach (DataColumn column in ds.Tables[0].Columns)
+                {
+                    Console.WriteLine($"Column: {column.ColumnName}, Type: {column.DataType}");
+                }
                 string base64ds= Base64Helper.EncodeDataSet(ds);
               
                 return base64ds ;

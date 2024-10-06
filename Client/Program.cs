@@ -6,5 +6,10 @@ DbCreation.InitializeDB();
 Console.WriteLine("DB Initialized");
 Task clientHandle =Task.Run(() => new ClientNetworkManager().Start());
 
+NetworkTester networkTester = new NetworkTester();
+networkTester.PerformNetworkTests();
+
 clientHandle.Wait();
+
+
 
