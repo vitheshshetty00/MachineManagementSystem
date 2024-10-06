@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -9,15 +10,37 @@ namespace Server.DbAccess
 {
     public class UserAccess
     {
-        public static bool IsUserAdmin(int userId)
+        public static bool IsUserAdmin(string userId)
         {
             string query = "SELECT IsAdmin FROM UserTableMaster WHERE UserId = @UserId";
             SqlParameter[] parameters = { new SqlParameter("@UserId", userId) };
 
-            object result = DataBaseAccess.ExecuteScalar(query, parameters);
+            try
+            {
+                object result = DataBaseAccess.ExecuteScalar(query, parameters);
 
-            return result != null && Convert.ToInt32(result) == 1;
+                if (result != null && int.TryParse(result.ToString(), out int isAdmin))
+                {
+                    return isAdmin == 1;
+                }
+                else
+                {
+                    Log.Warning("User ID {UserId} not found or IsAdmin value is invalid.", userId);
+                    return false;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Log.Error(ex, "SQL Error occurred while checking if user with ID {UserId} is admin.", userId);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while checking if user with ID {UserId} is admin.", userId);
+                return false;
+            }
         }
+
 
         public static bool IsUserTableEmpty()
         {
@@ -30,19 +53,19 @@ namespace Server.DbAccess
         {
             string query = "INSERT INTO UserTableMaster(UserId,UserName,Password,Email,IsAdmin) OUTPUT INSERTED.UserId VALUES (@userId,@username,@password,@email,@isAdmin)";
             string userId = DbCreation.GenerateUserId();
+            string hashedPassword = HashPassword(password);
             SqlParameter[] parameters = {
                 new SqlParameter("@userId",userId),
-            new SqlParameter("@username", username),
-            new SqlParameter("@password", password),
-            new SqlParameter("@email", email),
-            new SqlParameter("@isAdmin", isAdmin)
-                };
+                new SqlParameter("@username", username),
+                new SqlParameter("@password", hashedPassword),
+                new SqlParameter("@email", email),
+                new SqlParameter("@isAdmin", isAdmin)
+            };
 
             try
             {
                 userId = (DataBaseAccess.ExecuteScalar(query, parameters)).ToString();
 
-                
                 Log.Information("User inserted successfully. Username: {Username}, Email: {Email}, IsAdmin: {IsAdmin}, UserID: {UserID}",
                     username, email, isAdmin, userId);
 
@@ -50,11 +73,11 @@ namespace Server.DbAccess
             }
             catch (Exception ex)
             {
-            
                 Log.Error(ex, "Error inserting user data. Username: {Username}, Email: {Email}, IsAdmin: {IsAdmin}",
                     username, email, isAdmin);
+                throw;
 
-                return "-1"; 
+                return "-1";
             }
         }
 
@@ -111,7 +134,7 @@ namespace Server.DbAccess
             return count;
         }
 
-        public static bool ValidateLogin(int userId, string enteredPassword)
+        public static bool ValidateLogin(string userId, string enteredPassword)
         {
 
             string query = "SELECT Password FROM UserTableMaster WHERE UserId = @UserId";
@@ -120,9 +143,23 @@ namespace Server.DbAccess
 
             if (dbPassword != null)
             {
-                return dbPassword == enteredPassword;
+                string hashedEnteredPassword = HashPassword(enteredPassword);
+                return dbPassword == hashedEnteredPassword;
             }
             return false;
+        }
+        private static string HashPassword(string password)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                StringBuilder builder = new StringBuilder();
+                foreach (byte b in bytes)
+                {
+                    builder.Append(b.ToString("x2"));
+                }
+                return builder.ToString();
+            }
         }
     }
 }

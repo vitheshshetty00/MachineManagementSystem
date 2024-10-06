@@ -12,34 +12,57 @@ namespace Server.View
     {
         public static void addUser()
         {
-            string? userName = Console.ReadLine();
-            while (string.IsNullOrEmpty(userName))
+            try
             {
-                Console.WriteLine("User Name cannot be empty.");
-                userName = Console.ReadLine();
-            }
-            if (userName == "0") return;
-            string? email = PromtAndValidateEmail("Enter Your Email");
-            string password = Password.InputPassword();
-            string userId = "0";
-            if (UserAccess.IsUserTableEmpty() || UserAccess.CountAdminUserMasterTable() == 0)
-            {
-                userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, 1);
-                Console.WriteLine($"User '{userName}' added as admin with ID:{userId}");
-            }
-            else
-            {
-                Console.WriteLine("Is Admin? (1 for Yes, 0 for No): ");
-
-                int.TryParse(Console.ReadLine(), out int isAdmin);
-
-                while (isAdmin != 0 && isAdmin != 1)
+                Console.WriteLine("Enter your UserName:");
+                string? userName = Console.ReadLine();
+                while (string.IsNullOrEmpty(userName))
                 {
-                    Console.WriteLine("Enter valid option.");
-                    int.TryParse(Console.ReadLine(), out isAdmin);
+                    Console.WriteLine("User Name cannot be empty.");
+                    userName = Console.ReadLine();
                 }
-                userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, isAdmin);
-                Console.WriteLine($"User '{userName}' with ID:{userId} registered successfully.");
+                if (userName == "0") return;
+                string? email = PromtAndValidateEmail("Enter Your Email: ");
+                string password = Password.InputPassword();
+                string userId = "0";
+                if (UserAccess.IsUserTableEmpty() || UserAccess.CountAdminUserMasterTable() == 0)
+                {
+                    userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, 1);
+                    if (userId != "-1")
+                    {
+                        Console.WriteLine($"User '{userName}' added as admin with ID:{userId}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to add user as admin.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Is Admin? (1 for Yes, 0 for No): ");
+
+                    int.TryParse(Console.ReadLine(), out int isAdmin);
+
+                    while (isAdmin != 0 && isAdmin != 1)
+                    {
+                        Console.WriteLine("Enter valid option.");
+                        int.TryParse(Console.ReadLine(), out isAdmin);
+                    }
+                    userId = UserAccess.InsertIntoUserMasterTable(userName, password, email, isAdmin);
+                    if (userId != "-1")
+                    {
+                        Console.WriteLine($"User '{userName}' with ID:{userId} registered successfully.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to register user.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred WHile adding user: {ex.Message}");
+                throw;
             }
         }
 

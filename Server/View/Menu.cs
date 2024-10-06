@@ -4,7 +4,7 @@ namespace Server.View
 {
     public class Menu
     {
-        public static void display(int userId)
+        public static void display(string userId)
         {
             while (true)
             {

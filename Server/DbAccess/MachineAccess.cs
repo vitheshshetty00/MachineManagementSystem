@@ -8,8 +8,8 @@ namespace Server.DbAccess
         public static void InsertMachineData(string machineName, string ip, string port, byte[] imageData)
         {
             string machineId = DbCreation.GenerateMachineId();
-            string query = @"INSERT INTO MachineTableMaster (@MachineId,MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
-                     VALUES (@MachineId.@MachineName, @IP, @Port, @Image);";
+            string query = @"INSERT INTO MachineTableMaster (MachineId,MachineName, IP, Port, Image) OUTPUT INSERTED.MachineId
+                     VALUES (@MachineId,@MachineName, @IP, @Port, @Image);";
 
                     SqlParameter[] parameters =
                     {
@@ -22,7 +22,7 @@ namespace Server.DbAccess
                     };
             try
             {
-                int M_id = Convert.ToInt32(DataBaseAccess.ExecuteScalar(query, parameters));
+                string? M_id = DataBaseAccess.ExecuteScalar(query, parameters)?.ToString();
                 Log.Information("Machine inserted successfully with ID: {MachineId}", M_id);
             }
             catch (SqlException ex)

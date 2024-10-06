@@ -57,12 +57,12 @@ namespace Server.DbAccess
             catch (SqlException ex)
             {
                 Log.Error($"SQL Error: {ex.Message}");
-                return -1;
+                throw; 
             }
             catch (Exception ex)
             {
                 Log.Error($"Error: {ex.Message}");
-                return -1;
+                throw;
             }
             finally
             {

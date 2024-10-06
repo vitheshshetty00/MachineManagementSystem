@@ -107,7 +107,7 @@ namespace Client.Network
                 {
                     Console.WriteLine("Attempting to connect to server...");
 
-                    client = new TcpClient("172.36.0.32", 3400);
+                    client = new TcpClient("172.18.224.1", 3400);
                     Console.WriteLine("Connected to server.");
                     return;
                 }

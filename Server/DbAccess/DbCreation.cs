@@ -1,6 +1,7 @@
 ﻿using Server.DbAccess;
 using System;
 using Microsoft.Data.SqlClient;
+using Shared.Models;
 
 namespace Server.DbAccess
 {
@@ -8,6 +9,7 @@ namespace Server.DbAccess
     {
         public static void InitializeDB()
         {
+           
             string machineTable = @"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='MachineTableMaster' AND xtype='U')
             CREATE TABLE MachineTableMaster (
@@ -15,7 +17,7 @@ namespace Server.DbAccess
                 MachineName NVARCHAR(50) NOT NULL,
                 IP NVARCHAR(50) NOT NULL,
                 Port INTEGER NOT NULL,
-                Image VARBINARY(1000) NOT NULL, 
+                Image VARBINARY(MAX) NOT NULL, 
                 Creation_Time DATETIME NOT NULL DEFAULT GETDATE(),
                 LastUpdated DATETIME NOT NULL DEFAULT GETDATE()
             );";
@@ -35,6 +37,7 @@ namespace Server.DbAccess
             CREATE TABLE UserTableMaster (
                 UserId NVARCHAR(50) PRIMARY KEY,
                 UserName NVARCHAR(50) NOT NULL,
+                Password NVARCHAR(256) NOT NULL,
                 Email NVARCHAR(50) NOT NULL, 
                 IsAdmin BIT DEFAULT 0
             );";
@@ -55,6 +58,11 @@ namespace Server.DbAccess
             {
                 Console.WriteLine($"Error creating tables: {ex.Message}");
             }
+            //List<Machine> machines = Machine.DataforInitization();
+            //foreach (Machine machine in machines)
+            //{
+            //    MachineAccess.InsertMachineData(machine.MachineName, machine.IPAddress, machine.PortNumber, machine.Image);
+            //}
         }
 
         public static string GenerateMachineId()
@@ -73,15 +81,14 @@ namespace Server.DbAccess
 
         private static int GetMachineCount()
         {
-            string query = "SELECT TOP 1 UserId FROM MachineTableMaster ORDER BY UserId DESC ";
-            object result = DataBaseAccess.ExecuteScalar(query, null);
-            return (int)(result ?? 0);
-
-            string number=result.ToString().Substring(2);
-
-            return Convert.ToInt32(number);
-
-           
+            string query = "SELECT TOP 1 MachineId FROM MachineTableMaster ORDER BY MachineId DESC ";
+            object result = DataBaseAccess.ExecuteScalar(query, null) ;
+            
+            if(result != null)
+            {
+                return Convert.ToInt32((result.ToString())?.Substring(2));
+            }
+            return 0;
         }
 
         private static int GetUserCount()
@@ -106,7 +113,8 @@ namespace Server.DbAccess
             }
 
             return 0; 
-        }
+        } 
+
 
     }
 }
