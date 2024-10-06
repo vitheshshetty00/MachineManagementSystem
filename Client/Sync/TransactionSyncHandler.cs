@@ -3,53 +3,86 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using static Shared.Utils.Base64Helper;
-
 
 namespace Client.Sync
 {
     public class TransactionSyncHandler
     {
-        private NetworkStream networkStream;
+        private StreamWriter writer;
         private Timer? _syncTimer;
 
-        public TransactionSyncHandler(NetworkStream networkStream)
+        public TransactionSyncHandler(StreamWriter writer)
         {
-            this.networkStream = networkStream;
+            this.writer = writer;
         }
 
         public void Start()
         {
-            _syncTimer = new Timer(SyncTransaction, null, TimeSpan.Zero,TimeSpan.FromMinutes(1));
+            
+            _syncTimer = new Timer(SyncTransaction, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+        }
+        public void Stop()
+        {
+            if (_syncTimer != null)
+            {
+                _syncTimer.Dispose();
+                _syncTimer = null;
+                Console.WriteLine("Transaction sync stopped.");
+            }
         }
 
         private void SyncTransaction(object? state)
         {
             Console.WriteLine("Transaction sync started.");
 
-            DataTable transactionTable = GetRecentTransactions();
+            DataSet transactionDataSet = GetRecentTransactions();
 
-            if (transactionTable.Rows.Count > 0)
+            if (transactionDataSet.Tables[0].Rows.Count > 0)
             {
-                string transactionBase64 =EncodeDatatable(transactionTable);
-                SendDataToServer(transactionBase64);
+                // Remove the TransactionId column
+                try
+                {
+                    transactionDataSet.Tables[0].Columns.Remove("TransactionId");
+
+                    string transactionBase64 = EncodeDataSet(transactionDataSet);
+
+                    var payload = new
+                    {
+                        OperationType = "TransactionSync",
+                        TableName = "TransactionTableMaster",
+                        EncodedData = transactionBase64
+                    };
+
+                    string jsonPayload = JsonSerializer.Serialize(payload);
+                    SendDataToServer(jsonPayload);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error encoding transaction data: {ex.Message}");
+                }
             }
             else
             {
                 Console.WriteLine("No New Transactions to Sync.");
             }
             Console.WriteLine("Transaction sync completed.");
-
         }
 
-        private void SendDataToServer(string base64Data)
+        private void SendDataToServer(string jsonPayload)
         {
             try
             {
-                byte[] dataToSend = Encoding.UTF8.GetBytes(base64Data);
+                if (string.IsNullOrEmpty(jsonPayload))
+                {
+                    Console.WriteLine("No data to send to server.");
+                    return;
+                }
+                string base64Payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonPayload));
 
-                networkStream.Write(dataToSend, 0, dataToSend.Length);
-                networkStream.Flush();
+                writer.WriteLine(base64Payload);
+                writer.Flush();
                 Console.WriteLine("Data sent to server.");
             }
             catch (Exception ex)
@@ -58,38 +91,38 @@ namespace Client.Sync
             }
         }
 
-        private DataTable GetRecentTransactions()
+        private DataSet GetRecentTransactions()
         {
-            DataTable transactionTable = new DataTable();
+            DataSet transactionDataSet = new DataSet();
+
 
             SqlConnection connection = DbConnectionManager.GetConnection();
             try
             {
                 string query = @"SELECT * FROM TransactionTableMaster
-                        WHERE Timestamp >= DATEADD(MINUTE, -2, GETDATE())";
-                using (SqlCommand command = new SqlCommand(query,connection))
+                                 WHERE Timestamp >= DATEADD(MINUTE, -2, GETDATE())";
+                using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    using(SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
                     {
-                        adapter.Fill(transactionTable);
+                        adapter.Fill(transactionDataSet);
                     }
                 }
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
-                Console.WriteLine(String.Format("An SQL Exception During Getting the Recent Transaction: {0}",ex.Message));
+                Console.WriteLine($"An SQL Exception During Getting the Recent Transaction: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(String.Format("An Exception During Getting the Recent Transaction: {0}", ex.Message));
+                Console.WriteLine($"An Exception During Getting the Recent Transaction: {ex.Message}");
             }
             finally
             {
                 connection.Close();
             }
 
-            return transactionTable;
+            return transactionDataSet;
         }
     }
 }
-

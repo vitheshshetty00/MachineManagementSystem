@@ -26,7 +26,7 @@ namespace Server.DbAccess
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TransactionTableMaster' AND xtype='U')
             CREATE TABLE TransactionTableMaster (
                 TransactionId INTEGER PRIMARY KEY IDENTITY(1,1),
-                M_Id NVARCHAR(50) FOREIGN KEY REFERENCES MachineTableMaster(MachineId),
+                M_Id NVARCHAR(50) FOREIGN KEY REFERENCES MachineTableMaster(MachineId) ON DELETE SET NULL,
                 Event NVARCHAR(10) NOT NULL DEFAULT 'Ping',
                 Timestamp DATETIME NOT NULL DEFAULT GETDATE(),
                 Status NVARCHAR(10) NOT NULL

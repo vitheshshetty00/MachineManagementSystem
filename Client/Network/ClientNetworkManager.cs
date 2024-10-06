@@ -25,12 +25,6 @@ namespace Client.Network
             try
             {
                 ConnectToServer();
-                networkStream = client.GetStream();
-                reader = new StreamReader(networkStream);
-                writer = new StreamWriter(networkStream);
-
-                transactionSyncHandler = new TransactionSyncHandler(networkStream);
-                transactionSyncHandler.Start();
 
             }
             catch (Exception ex)
@@ -158,6 +152,12 @@ namespace Client.Network
 
                     client = new TcpClient("172.18.224.1", 3400);
                     Console.WriteLine("Connected to server.");
+                    networkStream = client.GetStream();
+                    reader = new StreamReader(networkStream);
+                    writer = new StreamWriter(networkStream);
+
+                    transactionSyncHandler = new TransactionSyncHandler(writer);
+                    transactionSyncHandler.Start();
                     return;
                 }
                 catch (Exception ex)
@@ -176,6 +176,7 @@ namespace Client.Network
             {
                 if (!client.Connected)
                 {
+                    transactionSyncHandler.Stop();
                     Console.WriteLine("Server disconnected. Attempting to reconnect...");
                     ConnectToServer();
                 }
