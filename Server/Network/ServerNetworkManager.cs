@@ -73,13 +73,13 @@ namespace Server.Network
                 StreamReader reader = new StreamReader(stream);
                 //When a client connects, send the database to the client(i,e the Machine table and Users table)
                 SendDatabaseTables(writer);
-                Console.WriteLine("Hii");
+                //Console.WriteLine("Hii");
                 //Thread transactionThread = new Thread(() => HandleTransactions(client, reader));
                 //transactionThread.IsBackground = true;
                 //transactionThread.Start();
 
 
-                //Task.Run(() => MonitorDatabaseChanges(client, writer));
+                Task.Run(() => new Sync.ServerUpdateHandler(client, writer).Start());
                 //while (client.Connected)
                 //{
                 //    try
@@ -231,9 +231,18 @@ namespace Server.Network
                 })
                 .CopyToDataTable();
 
-                printDataTable(newTransactions);
+
+
+                //printDataTable(newTransactions);
                 // Insert new transactions into the database
-                InsertNewTransactions(newTransactions);
+                if (newTransactions.Rows.Count > 0)
+                {
+                    InsertNewTransactions(newTransactions);
+                }
+                else
+                {
+                    Console.WriteLine("No new transactions to insert.");
+                }
             }
             catch (Exception ex)
             {
@@ -357,10 +366,7 @@ namespace Server.Network
 
         }
 
-        private static void MonitorDatabaseChanges(TcpClient client, StreamWriter writer)
-        {
-            throw new NotImplementedException();
-        }
+        
 
      
 

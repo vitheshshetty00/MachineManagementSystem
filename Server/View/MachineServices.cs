@@ -29,7 +29,7 @@ namespace Server.View
             }
             Console.WriteLine("Enter Port number");
             string? port = Console.ReadLine();
-            while (string.IsNullOrEmpty(port) || !IsNumeric(port) || (port.Length > 0 && port.Length <= 4))
+            while (string.IsNullOrEmpty(port) || !IsNumeric(port) || !(port.Length > 0 && port.Length <= 4))
             {
                 Console.WriteLine("Enter valid Port number");
                 port = Console.ReadLine();

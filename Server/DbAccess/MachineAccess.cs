@@ -80,7 +80,7 @@ namespace Server.DbAccess
                 string? ip = reader["IP"].ToString();
                 string? port = reader["Port"].ToString();
                 byte[] img = (byte[])reader["Image"];
-                string? time = reader["Timestamp"].ToString();
+                string? time = reader["Creation_Time"].ToString();
 
                 Console.WriteLine($"{m_id,-10} {m_name,-20} {ip,-15} {port,-10} {img.Length,-15} {time,-20}");
             }

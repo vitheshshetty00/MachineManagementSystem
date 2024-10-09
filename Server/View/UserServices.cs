@@ -71,7 +71,7 @@ namespace Server.View
             try
             {
                 Console.WriteLine("Enter User Id :");
-                int.TryParse(Console.ReadLine(), out int id);
+                string id = Console.ReadLine();
 
                 if (UserAccess.DeleteUserMasterTable(id) > 0)
                 {

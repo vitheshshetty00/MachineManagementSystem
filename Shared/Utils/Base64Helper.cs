@@ -9,11 +9,15 @@ namespace Shared.Utils
     {
         public static string EncodeDatatable(DataTable dataTable)
         {
-            using (var memoryStream = new MemoryStream())
+            using (var stringWriter = new StringWriter())
             {
-                dataTable.WriteXml(memoryStream);
-
-                return Convert.ToBase64String(memoryStream.ToArray());
+                using (var xmlWriter = XmlWriter.Create(stringWriter))
+                {
+                    dataTable.WriteXml(xmlWriter, XmlWriteMode.WriteSchema);
+                }
+                string xmlString = stringWriter.ToString();
+                byte[] xmlBytes = Encoding.UTF8.GetBytes(xmlString);
+                return Convert.ToBase64String(xmlBytes);
             }
         }
 
@@ -27,18 +31,20 @@ namespace Shared.Utils
             }
         }
 
-        public static DataTable DecodeDatatable(string base64)
+        public static DataTable DecodeDatatable(string base64String)
         {
-            var dataTable = new DataTable();
-            byte[] decoded = Decode(base64);
+            byte[] xmlBytes = Convert.FromBase64String(base64String);
+            string xmlString = Encoding.UTF8.GetString(xmlBytes);
 
-            string xmlString = Encoding.UTF8.GetString(decoded);
-            //Console.WriteLine(xmlString);
             using (var stringReader = new StringReader(xmlString))
             {
-                dataTable.ReadXml(stringReader);
+                using (var xmlReader = XmlReader.Create(stringReader))
+                {
+                    DataTable dataTable = new DataTable();
+                    dataTable.ReadXml(xmlReader);
+                    return dataTable;
+                }
             }
-            return dataTable;
         }
         public static DataSet DecodeDataSet(string base64)
         {

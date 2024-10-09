@@ -19,9 +19,10 @@ namespace Server.DbAccess
             {
                 object result = DataBaseAccess.ExecuteScalar(query, parameters);
 
-                if (result != null && int.TryParse(result.ToString(), out int isAdmin))
+                if (result != null)
                 {
-                    return isAdmin == 1;
+                    //Console.WriteLine("User ID {UserId} is admin: ", userId );
+                    return (bool)result;
                 }
                 else
                 {
@@ -82,7 +83,7 @@ namespace Server.DbAccess
         }
 
 
-        public static int DeleteUserMasterTable(int u_id)
+        public static int DeleteUserMasterTable(string u_id)
         {
             string query = "DELETE FROM UserTableMaster WHERE UserId = @u_id";
             SqlParameter[] parameters = { new SqlParameter("@u_id", u_id) };
@@ -150,6 +151,7 @@ namespace Server.DbAccess
         }
         private static string HashPassword(string password)
         {
+            
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
